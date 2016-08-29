@@ -2,7 +2,7 @@
 [INFO]
 
 NAME = Batch Bake Textures
-VERSION = 1.0.1
+VERSION = 1.0.2
 AUTHOR = MastaMan
 DEV = ViscoCG
 HELP = 
@@ -24,7 +24,7 @@ Test functionality
 
 
 try(closeRolloutFloater fBatchBakeTextures)catch()
-global fBatchBakeTextures = newRolloutFloater "Batch Bake Textures" 250 370
+global fBatchBakeTextures = newRolloutFloater "Batch Bake Textures" 250 320
 	
 fn getScriptInfo s releaseInfo: "" =
 (		
@@ -132,13 +132,21 @@ rollout rBatchBakeTextures "Options"
 		checkbox cbxShowVFB "Show VFB"
 	)
 	button btnStart "Start" width:220 height:35	offset: [0, 10]
-	label lblStatus "" offset: [0, 10]
+	label lblStatus "" offset: [0, 10] width: 210
 	
-	global szOutFolder = ""
+	global szOutFolder = ""	
+	global iWindowPos = [0,0]
+	global szInitalDir = ""
 	
 	fn disableUI d =
 	(
 		for i in rBatchBakeTextures.controls do i.enabled = d
+	)
+	
+	fn saveWindowPos =
+	(
+		useSettings "X"  iWindowPos[1] "w"
+		useSettings "Y"  iWindowPos[2] "w"		
 	)
 	
 	fn BatchBakeTextures size: 512 progress: false vfb: false =
@@ -150,7 +158,8 @@ rollout rBatchBakeTextures "Options"
 		
 		m = VrayMtl()
 
-		c = 1 		
+		c = 1
+		skip = 0
 		
 		for s in objs where isValidNode s do
 		(			
@@ -158,17 +167,21 @@ rollout rBatchBakeTextures "Options"
 			bakeTex = s.INodeBakeProperties
 			
 			n = bakeTex.numBakeElements()
+						
+			if(n == 0) do 
+			(
+				skip += 1
+				continue
+			)
 			
-			lblStatus.caption = c as string + "/" + objs.count as string
-			
-			if(n == 0) do continue
+			lblStatus.caption = ("Baking: " + (c as string) + "/" + (objs.count as string) +  " | Skip:  " + (skip as string))
 			
 			for i in 1 to n do 
 			(	
 				el = bakeTex.getBakeElement i
 				
 				--el.fileName 
-				el.fileType = szOutFolder + @"\" + (filenameFromPath el.fileType)
+				el.fileType = szOutFolder + (filenameFromPath el.fileType)
 			)
 						
 			bakeTex.bakeEnabled = true
@@ -184,6 +197,8 @@ rollout rBatchBakeTextures "Options"
 							
 			c += 1
 		)
+		
+		select objs
 	)
 	
 	on btnStart pressed do
@@ -206,10 +221,47 @@ rollout rBatchBakeTextures "Options"
 		
 		if(d == undefined) do return false
 		
-		edtBrowse.text = d
+		szOutFolder = d +  @"\"
+		edtBrowse.text = szOutFolder
+			
+		szInitalDir = szOutFolder
 		
-		szOutFolder = d
+		useSettings "INITIALDIR" szInitalDir "w"
 	)
+	
+	on rBatchBakeTextures close do
+	(
+		saveWindowPos()
+	)
+	
+	on rBatchBakeTextures open do
+	(
+		x = useSettings "x" "float" "r"
+		y = useSettings "y" "float" "r"
+		
+		szInitalDir = useSettings "INITIALDIR" "string" "r"
+		
+		t = useSettings "TEXSIZE" "int" "r"
+		if(t != 0) do spnTexSize.value = t
+		
+		cbxShowProgressBar.checked = useSettings "PROGRESS" "bool" "r"
+		cbxShowVFB.checked = useSettings "VFB" "bool" "r"
+		
+		if(x != 0.0 and y != 0.0) do fBatchBakeTextures.pos = [x, y]
+	)
+	
+	on rBatchBakeTextures moved p do
+	(
+		iWindowPos = p
+	)	
+	
+	on spnTexSize changed v do
+	(
+		useSettings "TEXSIZE" v "w"
+	)
+	
+	on cbxShowProgressBar changed v do useSettings "PROGRESS" v "w"
+	on cbxShowVFB changed v do useSettings "VFB" v "w"	
 )
 
 rollout rAbout "About" 
@@ -251,7 +303,7 @@ rollout rAbout "About"
 		lblCopy.caption = i[6]
 		
 		getHelp()
-	)
+	)	
 )
 
 addRollout rBatchBakeTextures fBatchBakeTextures rolledUp:false 
