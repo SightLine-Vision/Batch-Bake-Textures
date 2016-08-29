@@ -2,7 +2,7 @@
 [INFO]
 
 NAME = Batch Bake Textures
-VERSION = 1.0.0
+VERSION = 1.0.1
 AUTHOR = MastaMan
 DEV = ViscoCG
 HELP = 
@@ -16,7 +16,7 @@ HELP =
 Bake textures for selected objects, which have already been set.=
 
 [TEST]
-
+Test functionality
 
 [SCRIPT]
 
@@ -120,44 +120,65 @@ fn freezeUi =
 
 rollout rBatchBakeTextures "Options" 
 (
-	spinner spnTexSize "Out size:" range: [128, 9999999999, 512] type: #integer fieldWidth: 70 align: #left
-	checkbox cbxShowProgressBar "Show Progress Bar"
-	button btnStart "Start" width:210 height:32 offset: [0, 10]
+	group "Save Textures To"
+	(
+		edittext edtBrowse "" width:223 height:25 readOnly:true text: "Please select folder" offset: [-7, 0]
+		button btnBrowse "Browse" width:220 height:35	
+	)
+	group ""
+	(
+		spinner spnTexSize "Out size:" range: [128, 9999999999, 512] type: #integer fieldWidth: 70 align: #left
+		checkbox cbxShowProgressBar "Show Progress Bar"
+		checkbox cbxShowVFB "Show VFB"
+	)
+	button btnStart "Start" width:220 height:35	offset: [0, 10]
 	label lblStatus "" offset: [0, 10]
 	
+	global szOutFolder = ""
 	
 	fn disableUI d =
 	(
 		for i in rBatchBakeTextures.controls do i.enabled = d
 	)
 	
-	fn BatchBakeTextures size: 512 progress: false =
+	fn BatchBakeTextures size: 512 progress: false vfb: false =
 	(
-		if(selection.count == 0) do return messageBox "Please select objects!" title: "Warning!"
+		objs = selection as array
+		
+		if(objs.count == 0) do return messageBox "Please select objects!" title: "Warning!"
+		if(szOutFolder.count < 2) do return messageBox "Please select output path!" title: "Warning!"
 		
 		m = VrayMtl()
 
-		c = 1 
+		c = 1 		
 		
-		
-		for s in selection where isValidNode s do
+		for s in objs where isValidNode s do
 		(			
+			select s
 			bakeTex = s.INodeBakeProperties
 			
 			n = bakeTex.numBakeElements()
 			
-			lblStatus.caption = c as string + "/" + selection.count as string
+			lblStatus.caption = c as string + "/" + objs.count as string
 			
 			if(n == 0) do continue
+			
+			for i in 1 to n do 
+			(	
+				el = bakeTex.getBakeElement i
+				
+				--el.fileName 
+				el.fileType = szOutFolder + @"\" + (filenameFromPath el.fileType)
+			)
 						
 			bakeTex.bakeEnabled = true
 			bakeTex.bakeChannel = 2
-			bakeTex.nDilations = 2		
-						
+			bakeTex.nDilations = 2	
+									
 			originalMat = s.material
 			s.material = m
 						
-			render rendertype:#bakeSelected frame: sliderTime outputSize: [size, size] vfb: on progressBar: progress  filterMaps: on antiAliasFilter: (catmull_rom())
+			render rendertype:#bakeSelected frame: sliderTime outputSize: [size, size] vfb: vfb progressBar: progress  filterMaps: off antiAliasFilter: (catmull_rom())
 				
 			s.material = originalMat
 							
@@ -172,10 +193,22 @@ rollout rBatchBakeTextures "Options"
 		
 		s = spnTexSize.value
 		p = cbxShowProgressBar.checked
+		v = cbxShowVFB.checked
 		
-		BatchBakeTextures size: s progress: p
+		BatchBakeTextures size: s progress: p vfb: v
 		
 		disableUI true
+	)
+	
+	on btnBrowse pressed do
+	(		
+		d = getSavePath caption:"Browse"	  initialDir: szInitalDir
+		
+		if(d == undefined) do return false
+		
+		edtBrowse.text = d
+		
+		szOutFolder = d
 	)
 )
 
