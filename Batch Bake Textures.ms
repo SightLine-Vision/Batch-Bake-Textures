@@ -17,6 +17,9 @@ HELP =
 [1.0.4]
 * Changed : List with resolutions=
 
+[1.0.5]
+* Changed : Now save textures path stored in scene=
+
 [ABOUT]
 
 Bake textures for selected objects, which have already been set.=
@@ -377,7 +380,7 @@ rollout rBatchBakeTextures "Options"
 		
 		edtBrowse.text = d +  @"\"
 				
-		useSettings "INITIALDIR" (edtBrowse.text) "w"
+		try(fileProperties.addProperty #custom "BAKEINITIALDIR" (edtBrowse.text)) catch()				
 	)
 	
 	on rBatchBakeTextures close do
@@ -393,12 +396,13 @@ rollout rBatchBakeTextures "Options"
 		
 		x = useSettings "x" "float" "r"
 		y = useSettings "y" "float" "r"
-		
-		i = useSettings "INITIALDIR" "string" "r"
-		if(i.count > 0) do edtBrowse.text = useSettings "INITIALDIR" "string" "r"
+
+		i = fileProperties.findProperty #custom "BAKEINITIALDIR"
+		if(i != 0) do edtBrowse.text  = fileProperties.getPropertyValue #custom i
 		
 		cbxShowProgressBar.checked = useSettings "PROGRESS" "bool" "r"
 		cbxShowVFB.checked = useSettings "VFB" "bool" "r"
+				
 		
 		if(x != 0.0 and y != 0.0) do fBatchBakeTextures.pos = [x, y]
 		
