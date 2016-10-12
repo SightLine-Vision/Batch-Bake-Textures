@@ -30,6 +30,9 @@ try(closeRolloutFloater fBatchBakeTextures)catch()
 global fBatchBakeTextures = newRolloutFloater "Batch Bake Textures" 250 600
 global bakeElements = #("", VRayGlobalIlluminationMap(), VRayTotalLightingMap())
 	
+global rBatchBakeTextures
+
+	
 fn getScriptInfo s releaseInfo: "" =
 (		
 	if(releaseInfo != "") do
@@ -127,12 +130,15 @@ fn fwdSelectionChanged =
 	sel = #()
 	types = #()
 	size = #()
-
+	
+	rBatchBakeTextures.btnStart.enabled = true
+	
 	if(selection.count == 0) do
 	(
 		rBatchBakeTextures.lbxElements.selection = #{1}
 		rBatchBakeTextures.ddlFormat.selection = 1
 		rBatchBakeTextures.ddlTexSize.selection = 1
+		rBatchBakeTextures.btnStart.enabled = false
 	)
 	
 	objs = selection as array	
@@ -255,6 +261,7 @@ rollout rBatchBakeTextures "Options"
 		lbxElements.items = z
 	)
 	
+			
 	fn BatchBakeTextures size: 512 progress: false vfb: false =
 	(
 		objs = selection as array
@@ -458,9 +465,6 @@ rollout rAbout "About"
 		getHelp()
 	)	
 )
-
-global rBatchBakeTextures
-global fBatchBakeTextures
 
 addRollout rBatchBakeTextures fBatchBakeTextures rolledUp:false 
 addRollout rAbout fBatchBakeTextures rolledUp:true 
