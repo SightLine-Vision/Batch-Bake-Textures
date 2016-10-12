@@ -14,6 +14,9 @@ HELP =
 [1.0.3]
 + Added: Setup bake elements feature=
 
+[1.0.4]
+* Changed : List with resolutions=
+
 [ABOUT]
 
 Bake textures for selected objects, which have already been set.=
@@ -399,16 +402,9 @@ rollout rBatchBakeTextures "Options"
 		
 		if(x != 0.0 and y != 0.0) do fBatchBakeTextures.pos = [x, y]
 		
-		res = #("")
-		iterator = 256
-		for r in 1 to 10 do
-		(			
-			n =iterator as string
-			append res (n + "x" + n)
-			iterator += 256
-		)
-		
-		ddlTexSize.items = res
+		res = #(128, 256, 512, 768, 1024, 2048, 4096, 8192)
+				
+		ddlTexSize.items = for i in res collect i as string + "x" + i as string
 				
 		getTexElements()
 		
